@@ -78,8 +78,11 @@ class ExtractData:
 
 
 if __name__ == '__main__':
+    print('starting save_notrevin')
+    
     parser = argparse.ArgumentParser(description='')
-
+    print('after description')
+    
     # random seed
     parser.add_argument('--random_seed', type=int, default=2021, help='random seed')
 
@@ -92,7 +95,8 @@ if __name__ == '__main__':
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
     parser.add_argument('--freq', type=str, default='h',
                         help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h')
-
+    print('after data loader add_arguments')
+    
     # forecasting task
     parser.add_argument('--seq_len', type=int, default=96, help='input sequence length')
     parser.add_argument('--label_len', type=int, default=48, help='start token length')

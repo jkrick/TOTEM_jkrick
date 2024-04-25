@@ -4,7 +4,10 @@ import pandas as pd
 import os
 from torch.utils.data import Dataset
 from sklearn.preprocessing import StandardScaler
-from process_zero_shot_data.utils.timefeatures import time_features
+import sys
+sys.path.append('process_zero_shot_data/utils/')
+#from process_zero_shot_data.utils.timefeatures import time_features
+from timefeatures import time_features
 import warnings
 
 warnings.filterwarnings('ignore')
@@ -42,7 +45,8 @@ class Dataset_Neuro(Dataset):
         train_data = np.load(os.path.join(self.root_path, 'train_data.npy'))
         val_data = np.load(os.path.join(self.root_path, 'val_data.npy'))
         test_data = np.load(os.path.join(self.root_path, 'test_data.npy'))
-
+        #pdb.set_trace()
+        
         train_data_reshaped = train_data.reshape(-1, train_data.shape[-1])
         val_data_reshaped = val_data.reshape(-1, val_data.shape[-1])
         test_data_reshaped = test_data.reshape(-1, test_data.shape[-1])

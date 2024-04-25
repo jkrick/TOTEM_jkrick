@@ -4,10 +4,105 @@ import pandas as pd
 import os
 from torch.utils.data import Dataset
 from sklearn.preprocessing import StandardScaler
-from imputation.utils.timefeatures import time_features
+from utils.timefeatures import time_features
 import warnings
 
 warnings.filterwarnings('ignore')
+
+#JK adding this initially from the forecasting/data_provider/data_loader.py from Dataset_Neuro
+#Editing to be appropriate for WISE dataset
+class Dataset_WISE(Dataset):
+    def __init__(self, root_path, flag='train', size=None,
+                 features='S', data_path='ETTh1.csv',
+                 target='OT', scale=True, timeenc=0, freq='h'):
+        #probably doesn't get used
+        if size == None:
+            self.seq_len = 24 * 4 * 4
+            self.label_len = 24 * 4
+            self.pred_len = 24 * 4
+        else:
+            self.seq_len = size[0] #number of time steps in the dataset before forecasting
+            self.label_len = 0 #size[1] # take this value from ETTm1 run = 0
+            self.pred_len = 0 # size[2]  #number of steps to predict on
+        assert flag in ['train', 'test', 'val']  #dont change next 12 lines
+        type_map = {'train': 0, 'val': 1, 'test': 2}
+        self.set_type = type_map[flag]
+
+        self.features = features
+        self.target = target
+        self.scale = scale
+        self.timeenc = timeenc
+        self.freq = freq
+
+        self.root_path = root_path
+        self.data_path = data_path
+        self.__read_data__()
+
+    def __read_data__(self):
+        self.scaler = StandardScaler()
+        #can keep all 8000 for this example as test_data
+        #can be a pandas.load from dataset with zeros on evenly sampled (binned) data
+        #train_data = np.load(os.path.join(self.root_path, 'train_data.npy'))
+        #val_data = np.load(os.path.join(self.root_path, 'val_data.npy'))
+        test_data = pd.read_parquet(os.path.join(self.root_path, 'df_lc_ML.parquet'))
+
+        #figure out what the shape of test_data is and figure out how to make my pandas dataframe that shape.
+        #train_data_reshaped = train_data.reshape(-1, train_data.shape[-1])
+        #val_data_reshaped = val_data.reshape(-1, val_data.shape[-1])
+        test_data_reshaped = test_data.reshape(-1, test_data.shape[-1])
+
+        if self.scale:
+            self.scaler.fit(train_data_reshaped)  #let the code do this, keep it
+            train_data_scaled = self.scaler.transform(train_data_reshaped)
+            val_data_scaled = self.scaler.transform(val_data_reshaped)
+            test_data_scaled = self.scaler.transform(test_data_reshaped)
+
+        train_scaled_orig_shape = train_data_scaled.reshape(train_data.shape)
+        val_scaled_orig_shape = val_data_scaled.reshape(val_data.shape)
+        test_scaled_orig_shape = test_data_scaled.reshape(test_data.shape)
+        #don't need the next 15 lines to split up
+        #do need self.data_x =  and self.data_y = test_x
+        if self.set_type == 0:  # TRAIN
+            train_x, train_y = self.make_full_x_y_data(train_scaled_orig_shape)
+            self.data_x = train_x
+            self.data_y = train_y
+
+        elif self.set_type == 1:  # VAL
+            val_x, val_y = self.make_full_x_y_data(val_scaled_orig_shape)
+            self.data_x = val_x
+            self.data_y = val_y
+
+        elif self.set_type == 2:  # TEST
+            test_x, test_y = self.make_full_x_y_data(test_scaled_orig_shape)
+            self.data_x = test_x
+            self.data_y = test_y
+    #remove this function
+    #def make_full_x_y_data(self, array):
+    #    data_x = []
+    #    data_y = []
+    #    for instance in range(0, array.shape[0]):
+    #        for time in range(0, array.shape[1]):
+    #            s_begin = time
+    #            s_end = s_begin + self.seq_len
+    #            r_begin = s_end - self.label_len
+    #            r_end = r_begin + self.label_len + self.pred_len
+    #            if r_end <= array.shape[1]:
+    #                data_x.append(array[instance, s_begin:s_end, :])
+    #                data_y.append(array[instance, r_begin:r_end, :])
+    #            else:
+    #                break
+    #    return data_x, data_y
+    #don't mess with the ones below
+    def __getitem__(self, index):
+        return self.data_x[index], self.data_y[index], 0, 0
+
+    def __len__(self):
+        return len(self.data_x)
+
+    def inverse_transform(self, data):
+        pdb.set_trace()
+        return self.scaler.inverse_transform(data)
+
 
 
 class Dataset_ETT_hour(Dataset):
@@ -75,6 +170,7 @@ class Dataset_ETT_hour(Dataset):
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
+        pdb.set_trace()
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
@@ -127,8 +223,8 @@ class Dataset_ETT_minute(Dataset):
 
     def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        
+        df_raw = pd.read_csv(os.path.join(self.root_path,self.data_path))
 
         border1s = [0, 12 * 30 * 24 * 4 - self.seq_len, 12 * 30 * 24 * 4 + 4 * 30 * 24 * 4 - self.seq_len]
         border2s = [12 * 30 * 24 * 4, 12 * 30 * 24 * 4 + 4 * 30 * 24 * 4, 12 * 30 * 24 * 4 + 8 * 30 * 24 * 4]
@@ -164,6 +260,7 @@ class Dataset_ETT_minute(Dataset):
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
+        pdb.set_trace()
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):

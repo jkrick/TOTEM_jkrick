@@ -46,8 +46,10 @@ def return_data_and_labels(xarr, mask, elec_exclude, instances_exclude):
     good_inst_good_elec_data = np.delete(good_elec_data, instances_exclude, axis=0)
     good_inst_good_elec_data_labels = np.delete(days_labels, instances_exclude, axis=0)
 
+    print("good_inst_good_elec_data.shape")
     print(good_inst_good_elec_data.shape)
     print(good_inst_good_elec_data_labels.shape)
+    print("np.unique(good_inst_good_elec_data_labels)")
     print(np.unique(good_inst_good_elec_data_labels))
 
     return good_inst_good_elec_data, good_inst_good_elec_data_labels
@@ -82,8 +84,11 @@ if __name__ == '__main__':
     clean_test_data = np.swapaxes(clean_test_data, 1, 2)  # make it example, time, sensor
 
     print('-----------------------')
+    print("clean_train_data.shape, clean_train_labels.shape")
     print(clean_train_data.shape, clean_train_labels.shape)
+    print("clean_val_data.shape, clean_val_labels.shape")
     print(clean_val_data.shape, clean_val_labels.shape)
+    print("clean_test_data.shape, clean_test_labels.shape")
     print(clean_test_data.shape, clean_test_labels.shape)
 
     save_path = args.save_path + 'pt' + str(args.patient_num) + '/'
@@ -91,19 +96,29 @@ if __name__ == '__main__':
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
+    print("clean_train_data.shape")
     print(clean_train_data.shape)
+    print("(clean_train_data.shape[0]*clean_train_data.shape[2])")
     print((clean_train_data.shape[0]*clean_train_data.shape[2]))
     print('---------')
 
+    print("clean_val_data.shape")
     print(clean_val_data.shape)
+    print("(clean_val_data.shape[0] * clean_val_data.shape[2])")
     print((clean_val_data.shape[0] * clean_val_data.shape[2]))
     print('---------')
 
+    print("clean_test_data.shape")
     print(clean_test_data.shape)
+    print("(clean_test_data.shape[0] * clean_test_data.shape[2])")
     print((clean_test_data.shape[0] * clean_test_data.shape[2]))
     print('---------')
 
+    print("clean_train_data.shape[0] + clean_val_data.shape[0] + clean_test_data.shape[0]")
     print(clean_train_data.shape[0] + clean_val_data.shape[0] + clean_test_data.shape[0])
+    print("(clean_train_data.shape[0]*clean_train_data.shape[2]) \
+          + (clean_val_data.shape[0]*clean_val_data.shape[2]) \
+          + (clean_test_data.shape[0]*clean_test_data.shape[2])")
     print((clean_train_data.shape[0]*clean_train_data.shape[2]) \
           + (clean_val_data.shape[0]*clean_val_data.shape[2]) \
           + (clean_test_data.shape[0]*clean_test_data.shape[2]))

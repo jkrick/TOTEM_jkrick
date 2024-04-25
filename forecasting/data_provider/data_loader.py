@@ -381,16 +381,16 @@ class Dataset_Neuro(Dataset):
     def __init__(self, root_path, flag='train', size=None,
                  features='S', data_path='ETTh1.csv',
                  target='OT', scale=True, timeenc=0, freq='h'):
-
+        #probably doesn't get used
         if size == None:
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
             self.pred_len = 24 * 4
         else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
-        assert flag in ['train', 'test', 'val']
+            self.seq_len = size[0] #number of time steps in the dataset before forecasting
+            self.label_len = size[1] # take this value from ETTm1 run
+            self.pred_len = size[2]  #number of steps to predict on
+        assert flag in ['train', 'test', 'val']  #dont change next 12 lines
         type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
 
@@ -406,6 +406,8 @@ class Dataset_Neuro(Dataset):
 
     def __read_data__(self):
         self.scaler = StandardScaler()
+        #can keep all 8000 for this example as test_data
+        #can be a pandas.load from dataset with zeros on evenly sampled (binned) data
         train_data = np.load(os.path.join(self.root_path, 'train_data.npy'))
         val_data = np.load(os.path.join(self.root_path, 'val_data.npy'))
         test_data = np.load(os.path.join(self.root_path, 'test_data.npy'))
@@ -415,7 +417,7 @@ class Dataset_Neuro(Dataset):
         test_data_reshaped = test_data.reshape(-1, test_data.shape[-1])
 
         if self.scale:
-            self.scaler.fit(train_data_reshaped)
+            self.scaler.fit(train_data_reshaped)  #let the code do this, keep it
             train_data_scaled = self.scaler.transform(train_data_reshaped)
             val_data_scaled = self.scaler.transform(val_data_reshaped)
             test_data_scaled = self.scaler.transform(test_data_reshaped)
@@ -423,7 +425,8 @@ class Dataset_Neuro(Dataset):
         train_scaled_orig_shape = train_data_scaled.reshape(train_data.shape)
         val_scaled_orig_shape = val_data_scaled.reshape(val_data.shape)
         test_scaled_orig_shape = test_data_scaled.reshape(test_data.shape)
-
+        #don't need the next 15 lines to split up
+        #do need self.data_x =  and self.data_y = test_x
         if self.set_type == 0:  # TRAIN
             train_x, train_y = self.make_full_x_y_data(train_scaled_orig_shape)
             self.data_x = train_x
@@ -438,7 +441,7 @@ class Dataset_Neuro(Dataset):
             test_x, test_y = self.make_full_x_y_data(test_scaled_orig_shape)
             self.data_x = test_x
             self.data_y = test_y
-
+    #remove this function
     def make_full_x_y_data(self, array):
         data_x = []
         data_y = []
@@ -454,7 +457,7 @@ class Dataset_Neuro(Dataset):
                 else:
                     break
         return data_x, data_y
-
+    #don't mess with the ones below
     def __getitem__(self, index):
         return self.data_x[index], self.data_y[index], 0, 0
 

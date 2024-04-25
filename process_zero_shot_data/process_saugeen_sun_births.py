@@ -166,8 +166,11 @@ def ltf_stride(data, input_size, output_size, stride):  # want output shape to b
     data_y = []
 
     for i in range(0, data.shape[1]):
+        #print("i in for loop", i)
         if stop >= data.shape[1]:
             break
+        #print('appended data x', data[:, start:middle])
+        #print('appended data y', data[:, middle:stop])
 
         data_x.append(data[:, start:middle])
         data_y.append(data[:, middle:stop])
@@ -176,6 +179,7 @@ def ltf_stride(data, input_size, output_size, stride):  # want output shape to b
         middle += stride
         stop += stride
 
+    print(len(data_x))
     data_x_arr = np.concatenate(data_x, axis=0)
     data_y_arr = np.concatenate(data_y, axis=0)
 

@@ -1,6 +1,6 @@
 python process_zero_shot_data/process_neuro_data.py \
     --patient_num 2 \
-    --base_path '/path/to/nc/file/' \
+    --base_path '/stage/irsa-staff-jkrick/TOTEM/data/' \
     --save_path 'process_zero_shot_data/data/'
 
 gpu=0
@@ -25,8 +25,8 @@ python -u process_zero_shot_data/save_notrevin_notrevinmasked_revinx_revinxmaske
   --save_path "process_zero_shot_data/data/imputation/neuro2"
 
 # draws from imputation processed data
-python process_zero_shot_data/prep_data_for_anomaly_detection.py \
-    --base_path 'process_zero_shot_data/data/imputation/neuro2/' \
-    --save_path 'process_zero_shot_data/data/anomaly_detection/neuro2/'
+#python process_zero_shot_data/prep_data_for_anomaly_detection.py \
+#    --base_path 'process_zero_shot_data/data/imputation/neuro2/' \
+#    --save_path 'process_zero_shot_data/data/anomaly_detection/neuro2/'
 
 # do not need anything further for forecasting

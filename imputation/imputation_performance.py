@@ -177,8 +177,9 @@ def create_NONrevin_dataloaders(batchsize=100, dataset="dummy", base_path='dummy
 
 
 def main(args):
-    device = 'cuda:' + str(args.gpu)
-    vqvae_model = torch.load(args.trained_vqvae_model_path)
+    # device = 'cuda:' + str(args.gpu) # ST JK edited 3/15
+    device = 'cpu'
+    vqvae_model = torch.load(args.trained_vqvae_model_path, map_location=torch.device(device)) # ST JK edited 3/15
     vqvae_model.to(device)
     vqvae_model.eval()
 

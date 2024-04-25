@@ -25,7 +25,8 @@ class ExtractData:
 
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(loader):
             x_original.append(np.array(batch_x))
-            batch_x = batch_x.float().to(self.device)
+            # batch_x = batch_x.float().to(self.device)  # ST JK commented out 3/15
+            batch_x = batch_x.float()
             # data going into revin should have dim:[bs x seq_len x nvars]
             x_in_revin_space.append(np.array(self.revin_layer_x(batch_x, "norm").detach().cpu()))
 
@@ -84,9 +85,12 @@ if __name__ == '__main__':
     parser.add_argument('--random_seed', type=int, default=2021, help='random seed')
 
     # data loader
-    parser.add_argument('--data', type=str, required=True, default='ETTm1', help='dataset type')
-    parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
-    parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')
+#    parser.add_argument('--data', type=str, required=True, default='ETTm1', help='dataset type')
+    parser.add_argument('--data', type=str, required=True, default='ECO2_ecog', help='dataset type')
+#    parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
+    parser.add_argument('--root_path', type=str, default='./data', help='root path of the data file')
+#    parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')
+    parser.add_argument('--data_path', type=str, default='ECO2_ecog_data', help='data file')
     parser.add_argument('--features', type=str, default='M',
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
