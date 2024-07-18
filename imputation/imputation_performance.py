@@ -161,6 +161,10 @@ def create_NONrevin_dataloaders(batchsize=100, dataset="dummy", base_path='dummy
         print('sunspot')
         full_path = base_path + '/sunspot'
 
+    elif dataset == 'WISE_variables':
+        print('WISE')
+        full_path = base_path + '/WISE_variables'
+
     else:
         print('Not done yet')
         pdb.set_trace()

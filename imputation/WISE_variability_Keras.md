@@ -53,6 +53,7 @@ from scipy.stats import sigmaclip
 from tqdm import tqdm
 import json
 from tensorflow import keras
+import tensorflow as tf
 
 from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, confusion_matrix
 from sklearn.model_selection import train_test_split
@@ -656,6 +657,10 @@ y_test=np.asarray(y_test).astype(np.float32)
 ```
 
 ```{code-cell} ipython3
+y_test
+```
+
+```{code-cell} ipython3
 #build a model
 #follow exactly the model = fully convolutional neural network
 
@@ -688,14 +693,35 @@ model = make_model(input_shape=x_train.shape[1:])
 ```
 
 ```{code-cell} ipython3
-x_train.shape[1:]
-```
-
-```{code-cell} ipython3
 [print(i.shape, i.dtype) for i in model.inputs]
 [print(o.shape, o.dtype) for o in model.outputs]
 #this is the same as the example with the FordA dataset (except for number of timesteps)
 #and except for  <dtype: 'float32'>
+```
+
+```{code-cell} ipython3
+from collections import Counter
+#Creating the class_weight dictionary:
+
+# Get class labels from your data (assuming y_train)
+class_labels = np.unique(y_train)
+
+# Count class occurrences
+class_counts = Counter(y_train)
+
+# Calculate total number of samples
+total_samples = len(y_train)
+
+# Calculate weights (inverse class frequency)
+class_weight = {class_label: (total_samples / class_counts[class_label]) for class_label in class_labels}
+```
+
+```{code-cell} ipython3
+class_weight
+```
+
+```{code-cell} ipython3
+tf.__version__
 ```
 
 ```{code-cell} ipython3
@@ -711,11 +737,14 @@ callbacks = [
     ),
     keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1),
 ]
-model.compile(
-    optimizer="adam",
-    loss="sparse_categorical_crossentropy",
-    metrics=["sparse_categorical_accuracy"],
-)
+#model.compile(
+#    optimizer="adam",
+#    loss="sparse_categorical_crossentropy",
+#    metrics=["sparse_categorical_accuracy"],
+#)
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+
 history = model.fit(
     x_train,
     y_train,
@@ -723,6 +752,7 @@ history = model.fit(
     epochs=epochs,
     callbacks=callbacks,
     validation_split=0.2,
+    class_weight = class_weight,
     verbose=1,
 )
 ```
@@ -735,6 +765,10 @@ test_loss, test_acc = model.evaluate(x_test, y_test)
 
 print("Test accuracy", test_acc)
 print("Test loss", test_loss)
+```
+
+```{code-cell} ipython3
+x_train.shape, y_train.shape, x_test.shape, y_test.shape
 ```
 
 ```{code-cell} ipython3
@@ -752,30 +786,54 @@ plt.close()
 ```
 
 ```{code-cell} ipython3
-import tensorflow as tf
+def plot_confusion_matrix(x_test, y_test, model, labels=[0, 1]):
+  """
+  Plots the confusion matrix for a classification model.
 
-#look some more at the results of this model
-y_predict = model.predict(x_test)
-y_true=y_test
-#result = confusion_matrix(y_true, y_prediction , normalize='pred')
-res = tf.math.confusion_matrix(y_true,y_predict)
+  Args:
+    x_test: The test data.
+    y_test: The true labels for the test data.
+    labels: The list of class labels (default: [0, 1]).
+  """
+
+  # Make predictions on the test data
+  y_pred = model.predict(x_test)
+
+  # Convert predictions to one-hot encoding if necessary
+  if len(y_pred.shape) == 2:
+    y_pred = np.argmax(y_pred, axis=1)
+
+  # Get the confusion matrix
+  cm = confusion_matrix(y_test, y_pred)
+
+  # Normalize the confusion matrix (optional)
+  # cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+  # Plot the confusion matrix
+  plt.figure(figsize=(8, 6))
+  plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+  plt.colorbar()
+  tick_marks = np.arange(len(labels))
+  plt.xticks(tick_marks, labels, rotation=45)
+  plt.yticks(tick_marks, labels)
+
+  # Use white text on dark squares
+  thresh = cm.max() / 2.
+  for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+    plt.text(j, i, cm[i, j],
+             horizontalalignment="center",
+             color="white" if cm[i, j] > thresh else "black")
+
+  plt.ylabel('True label')
+  plt.xlabel('Predicted label')
+  plt.title('Confusion Matrix')
+  plt.tight_layout()
+  plt.show()
 ```
 
 ```{code-cell} ipython3
- cm = confusion_matrix(y_test, y_predict, labels=np.unique(y_train))
-```
-
-```{code-cell} ipython3
-y_test
-```
-
-```{code-cell} ipython3
-y_prediction = np.argmax (y_prediction)#, axis = 1)
-y_test=np.argmax(y_test)#, axis=1)
-```
-
-```{code-cell} ipython3
-result = confusion_matrix(y_test, y_prediction , normalize='pred')
+import itertools
+plot_confusion_matrix(x_test, y_test, model, labels=[0, 1])
 ```
 
 ```{code-cell} ipython3

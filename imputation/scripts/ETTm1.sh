@@ -1,10 +1,12 @@
 gpu=0
 seq_len=96
 root_path_name=/stage/irsa-staff-jkrick/TOTEM/imputation/data/
-#data_path_name=ETTm1.csv
-#data_name=ETTm1
-data_path_name=ECO2_ecog_data.nc
-data_name=ECO2_ecog
+data_path_name=ETTm1.csv
+data_name=ETTm1
+#data_path_name=ECO2_ecog_data.nc
+#data_name=ECO2_ecog
+#data_path_name=X_np.npy
+#data_name=WISE_variables
 random_seed=2021
 pred_len=0
 
@@ -20,3 +22,4 @@ python -u imputation/save_notrevin_notrevinmasked_revinx_revinxmasked.py\
   --enc_in 7\
   --gpu $gpu\
   --save_path "imputation/data/ETTm1"
+#  --save_path "imputation/data/WISE_variables"

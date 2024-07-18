@@ -380,7 +380,8 @@ def bin_and_mean_flux_err(df, chosen_freq):
   Args:
     df: The input pandas DataFrame.
     chosen_freq: frequency over which to bin the timestamps
-        example: '6M'
+        example: '6M'  or '60D'
+        see here for list of string aliases that can be used: https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliases
 
   Returns:
     A new pandas DataFrame with columns 'datetime', 'objectid', 'label', 'band', 'mean_flux', 'mean_err'.
@@ -431,7 +432,6 @@ t = Time(jd, format = 'jd' )
 #t.datetime is now an array of type datetime
 #make it a column in the dataframe
 df_test['datetime'] = t.datetime
-
 ```
 
 ```{code-cell} ipython3
@@ -447,191 +447,37 @@ with pd.option_context('display.max_rows', None,):
 ```
 
 ```{code-cell} ipython3
-def handle_string_column(col):
-  # Check if column is empty (has no data)
-  if not col.empty:
-    return col.iloc[0]  # Return value of first entry if not empty
-  else:
-    # Handle empty column (e.g., return a default value)
-    return "NA"  # Example: return "NA" for missing data
-```
-
-```{code-cell} ipython3
-%%time 
-#this cell is not fast, but it does what I want it to.
-#prepare to make sure that the time arrays are the same length for all objectids
-#add min and max time values to all objectids
-
-
-#call it something else for now so we don't alter the original dataframe when testing.
-df_test = df_lc
-
-#what is the overall min and max timestamp for the whole sample, all insturments?
-min_time = df_test.time.min()
-max_time = df_test.time.max()
-
-#for each objectid
-for i in df_test.objectid.unique():  #range(50): #for testing 
-    this_label = df_test[df_test["objectid"] == i].label.unique()
-    this_label = ' '.join(map(str, this_label))
-    this_band = df_test[df_test["objectid"] == i].band.unique()
-#    print("this_label, this_band", this_label, this_band)
-#    time_df = pd.DataFrame({'time': [min_time, max_time, max_time + (6*28)], 
-#                            'flux': [np.nan, np.nan, np.nan], 
-#                            'objectid': [i, i,i ], 
-#                            'label':[this_label, this_label, this_label],
-#                           'band': [this_band, this_band, this_band]})
-    #add timestamps and fake (NaN) fluxes for the min and max time. 
-    time_df = pd.DataFrame({'time': [min_time, max_time], 
-                            'flux': [np.nan, np.nan], 
-                            'objectid': [i, i ], 
-                            'label':[this_label, this_label],
-                           'band': [this_band, this_band]})
- 
-    #add the min/max to the main df
-    df_test = pd.concat([df_test,time_df] )
-    
-# Convert the "time" column to a DatetimeIndex
-#these dates aren't correct for the WISE telescope because I want them to start at 0 above. 
-#df['datetime'] = pd.to_datetime(df['time'], unit = 'D')
-
-#need to convert df_lc time into datetime
-mjd = df_test.time
-
-#convert to JD
-jd = mjd_to_jd(mjd)
-
-#convert to individual components
-t = Time(jd, format = 'jd' )
-
-#t.datetime is now an array of type datetime
-#make it a column in the dataframe
-df_test['datetime'] = t.datetime
-```
-
-```{code-cell} ipython3
-df_test = df_test.explode('band')
+df_binned.dtypes
 ```
 
 ```{code-cell} ipython3
 #get rid of object dtypes in the columns so that we can work with the dataframe
-df_test['band'] = df_test['band'].astype('string')
-df_test['label'] = df_test['label'].astype('string')
-df_test.dtypes
+df_binned['band'] = df_binned['band'].astype('string')
+df_binned['label'] = df_binned['label'].astype('string')
+df_binned.dtypes
 ```
 
 ```{code-cell} ipython3
 #save df_test to somewhere wile working on the code:
-df_test.to_parquet('data/df_test.parquet')
+df_binned.to_parquet('data/df_test.parquet')
 ```
 
 ```{code-cell} ipython3
-def bin_by_time(df, chosen_freq, additional_columns=None):
-    """
-    Bins fluxes by chosen intervals to put all objects on the same time array.
-
-    Parameters
-    ----------
-    df: Pandas dataframe with columns "time" and "flux" (and potentially others)
-
-    chosen_freq: str
-        Time on which to bin, eg., "6M"
-    
-    additional_columns: list, optional
-        List of additional column names to include in the output DataFrame.
-
-    Returns
-    --------
-    binned_df: dataframe with time, flux, and optionally other columns; time in pd.DateTime
-
-    """
-    df_list = []
-    unique_bands = df.band.unique()
-    for u in unique_bands: 
-        print('starting with', u)
-        df_singleband = df[df.band == u]
-        print('df_singleband ', df_singleband)
-        # Group by time interval and calculate the mean for "flux" and other columns
-        if additional_columns is None:
-            binned_df = df_singleband.groupby(pd.Grouper(key='datetime', freq=chosen_freq))['flux'].mean()
-        else:
-        # Include additional columns along with flux using agg
-        # Group by time interval and apply functions
-            binned_df = df_singleband.groupby(pd.Grouper(key='datetime', freq=chosen_freq)).agg({
-                'flux': 'mean',
-                **{col: handle_string_column for col in additional_columns}
-            })
-
-        # Convert the returned series to a DataFrame
-        #binned_df = binned_df.to_frame()
-
-        # Replace "NaN" values with 0 in all columns
-        binned_df.fillna(0, inplace=True)
-
-        #combine together all binned_df's
-        df_list.append(binned_df)
-        df_return = pd.DataFrame(df_list)
-
-    return df_return
-```
-
-```{code-cell} ipython3
-df_test
-```
-
-```{code-cell} ipython3
-%%time
-#now I need to get this into a groupby.apply
-df_equal_time = df_test.groupby(['objectid']).apply(bin_by_time, "6M", additional_columns = ["band", "label"]).reset_index()
-```
-
-```{code-cell} ipython3
-df_singleband
+df_binned
 ```
 
 ```{code-cell} ipython3
 #how do I test that each time array is the same for each object
 #groupby objectid then count the number of datetimes.
-df_equal_time.groupby(["objectid","band"]).count()
-```
-
-```{code-cell} ipython3
-df_equal_time
-```
-
-```{code-cell} ipython3
-#need to make sure all rows of the same objctid have the same band and label values.
+df_binned.groupby(["objectid","band"]).count()
 
 
-def fill_na_by_objectid(df, column_name):
-  """Fills NA values in a specified column with the most frequent value for each 'objectid' group.
-
-  Args:
-      df: A pandas DataFrame with two columns, 'objectid' and 'label', where 'objectid' is an integer and 'label' may contain NA values.
-      column_name: The name of the column to fill NA values in.
-
-  Returns:
-      A new pandas DataFrame with NA values in 'column_name' replaced with the most frequent value for each 'objectid' group.
-  """
-  g = df.groupby('objectid')[column_name].transform('first')
-  return df.assign(**{column_name: lambda x: x[column_name].where(x[column_name] != 'NA', g)})
-```
-
-```{code-cell} ipython3
-df_test = fill_na_by_objectid(df_equal_time, 'label')
-df_test2= fill_na_by_objectid(df_test, 'band')
-df_test2.dtypes
-```
-
-```{code-cell} ipython3
-ob_of_interest = 1059
-singleob = df_test2[df_test2['objectid'] == ob_of_interest]
-singleob
+#this also gives me the number of real values in each array.  
 ```
 
 ```{code-cell} ipython3
 #try visualizing again to see what we have
-visualize_data(df_test2,"datetime")
+visualize_data(df_binned,"binned_datetime")
 ```
 
 ```{code-cell} ipython3

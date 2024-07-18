@@ -22,32 +22,38 @@ class ExtractData:
     def one_loop(self, loader):
         x_original = []
         x_in_revin_space = []
+        #print('data loader inside one_loop', loader)
 
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(loader):
+            #print('batch_x', batch_x, batch_y)
             x_original.append(np.array(batch_x))
             # batch_x = batch_x.float().to(self.device)  # ST JK commented out 3/15
             batch_x = batch_x.float()
             # data going into revin should have dim:[bs x seq_len x nvars]
             x_in_revin_space.append(np.array(self.revin_layer_x(batch_x, "norm").detach().cpu()))
 
+        print('len(x_original)', len(x_original))
         x_original_arr = np.concatenate(x_original, axis=0)
         x_in_revin_space_arr = np.concatenate(x_in_revin_space, axis=0)
 
-        print(x_in_revin_space_arr.shape, x_original_arr.shape)
+        #print(x_in_revin_space_arr.shape, x_original_arr.shape)
         return x_in_revin_space_arr, x_original_arr
 
     def extract_data(self):
-        train_data, train_loader = self._get_data(flag='train')
-        vali_data, vali_loader = self._get_data(flag='val')
+
+        #pdb.set_trace()
+        
+        #train_data, train_loader = self._get_data(flag='train')
+        #vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
 
-        print('got loaders starting revin')
+        print('ttest_data.shape', len(test_data))
 
         # These have dimension [bs, ntime, nvars]
-        x_train_in_revin_space_arr, x_train_original_arr = self.one_loop(train_loader)
-        print('starting val')
-        x_val_in_revin_space_arr, x_val_original_arr = self.one_loop(vali_loader)
-        print('starting test')
+        #x_train_in_revin_space_arr, x_train_original_arr = self.one_loop(train_loader)
+        #print('starting val')
+        #x_val_in_revin_space_arr, x_val_original_arr = self.one_loop(vali_loader)
+        #print('starting test')
         x_test_in_revin_space_arr, x_test_original_arr = self.one_loop(test_loader)
 
         print('Flattening Sensors Out')
@@ -55,26 +61,26 @@ class ExtractData:
             pdb.set_trace()
         else:
             # These have dimension [bs x nvars, ntime]
-            x_train_arr = np.swapaxes(x_train_in_revin_space_arr, 1,2).reshape((-1, self.args.seq_len))
-            x_val_arr = np.swapaxes(x_val_in_revin_space_arr, 1, 2).reshape((-1, self.args.seq_len))
+            #x_train_arr = np.swapaxes(x_train_in_revin_space_arr, 1,2).reshape((-1, self.args.seq_len))
+            #x_val_arr = np.swapaxes(x_val_in_revin_space_arr, 1, 2).reshape((-1, self.args.seq_len))
             x_test_arr = np.swapaxes(x_test_in_revin_space_arr, 1, 2).reshape((-1, self.args.seq_len))
 
-            orig_x_train_arr = np.swapaxes(x_train_original_arr, 1, 2).reshape((-1, self.args.seq_len))
-            orig_x_val_arr = np.swapaxes(x_val_original_arr, 1, 2).reshape((-1, self.args.seq_len))
+            #orig_x_train_arr = np.swapaxes(x_train_original_arr, 1, 2).reshape((-1, self.args.seq_len))
+            #orig_x_val_arr = np.swapaxes(x_val_original_arr, 1, 2).reshape((-1, self.args.seq_len))
             orig_x_test_arr = np.swapaxes(x_test_original_arr, 1, 2).reshape((-1, self.args.seq_len))
 
-            print(x_train_arr.shape, x_val_arr.shape, x_test_arr.shape)
-            print(orig_x_train_arr.shape, orig_x_val_arr.shape, orig_x_test_arr.shape)
+            print("shapes",x_test_arr.shape)
+            print(orig_x_test_arr.shape)
 
         if not os.path.exists(self.args.save_path):
             os.makedirs(self.args.save_path)
-
-        np.save(self.args.save_path + '/train_revin_x.npy', x_train_arr)
-        np.save(self.args.save_path + '/val_revin_x.npy', x_val_arr)
+        #pdb.set_trace()
+        #np.save(self.args.save_path + '/train_revin_x.npy', x_train_arr)
+        #np.save(self.args.save_path + '/val_revin_x.npy', x_val_arr)
         np.save(self.args.save_path + '/test_revin_x.npy', x_test_arr)
 
-        np.save(self.args.save_path + '/train_notrevin_x.npy', orig_x_train_arr)
-        np.save(self.args.save_path + '/val_notrevin_x.npy', orig_x_val_arr)
+        #np.save(self.args.save_path + '/train_notrevin_x.npy', orig_x_train_arr)
+        #np.save(self.args.save_path + '/val_notrevin_x.npy', orig_x_val_arr)
         np.save(self.args.save_path + '/test_notrevin_x.npy', orig_x_test_arr)
 
 
@@ -90,7 +96,7 @@ if __name__ == '__main__':
 #    parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
     parser.add_argument('--root_path', type=str, default='./data', help='root path of the data file')
 #    parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')
-    parser.add_argument('--data_path', type=str, default='ECO2_ecog_data', help='data file')
+    parser.add_argument('--data_path', type=str, default='X_np.npy', help='data file')
     parser.add_argument('--features', type=str, default='M',
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
@@ -118,9 +124,11 @@ if __name__ == '__main__':
     parser.add_argument('--test_flop', action='store_true', default=False, help='See utils/tools for usage')
 
     # Save Location
-    parser.add_argument('--save_path', type=str, default=False, help='folder ending in / where we want to save the revin data to')
+    parser.add_argument('--save_path', type=str, default="imputation/data/WISE_variables", help='folder ending in / where we want to save the revin data to')
 
     args = parser.parse_args()
+
+    #pdb.set_trace()
 
     # random seed
     fix_seed = args.random_seed
@@ -149,8 +157,9 @@ if __name__ == '__main__':
     elif 'ETT' in args.data and args.enc_in == 7:
         pass
     else:
-        pdb.set_trace()
-
+        #pdb.set_trace()  #JK commented out
+        print('working on a different dataset')
+        
     print('Args in experiment:')
     print(args)
 
